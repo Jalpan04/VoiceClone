@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Speaker Annotator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f1117;
+            color: #e1e4e8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+
+        h1 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        /* Stats row */
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .stat-mine  { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+        .stat-maybe { background: rgba(241,196,15,0.15); color: #f1c40f; border: 1px solid rgba(241,196,15,0.3); }
+        .stat-notmine { background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+
+        /* Main card */
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 620px;
+            padding: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .mode-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .mode-maybe   { background: rgba(241,196,15,0.2); color: #f1c40f; border: 1px solid rgba(241,196,15,0.4); }
+        .mode-not_mine { background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+
+        .remaining {
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        .folder-path {
+            font-size: 14px;
+            font-weight: 600;
+            color: #c9d1d9;
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 6px;
+            padding: 10px 12px;
+            word-break: break-all;
+            margin-bottom: 6px;
+        }
+
+        .ai-score {
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 16px;
+            height: 18px;
+        }
+        .ai-score span {
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .score-high  { background: rgba(46,204,113,0.15); color: #2ecc71; }
+        .score-mid   { background: rgba(241,196,15,0.15); color: #f1c40f; }
+        .score-low   { background: rgba(231,76,60,0.15); color: #e74c3c; }
+
+        /* Players */
+        .players { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .player-box {
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .player-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        audio { width: 100%; outline: none; }
+
+        /* Controls */
+        .controls { display: flex; gap: 12px; }
+        button {
+            flex: 1;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.08s, opacity 0.08s;
+        }
+        button:active { transform: scale(0.97); opacity: 0.85; }
+        .btn-mine    { background: #238636; }
+        .btn-notmine { background: #da3633; }
+        .btn-skip    { background: #2d333b; color: #8b949e; flex: 0.4; font-size: 13px; }
+
+        .shortcut {
+            display: block;
+            font-size: 11px;
+            opacity: 0.7;
+            font-weight: normal;
+            margin-top: 3px;
+        }
+
+        .done-msg {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2ecc71;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .instructions {
+            font-size: 12px;
+            color: #8b949e;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Speaker Annotator</h1>
+
+    <div class="stats">
+        <span class="stat-chip stat-mine"  id="statMine">Mine: -</span>
+        <span class="stat-chip stat-maybe" id="statMaybe">Maybe: -</span>
+        <span class="stat-chip stat-notmine" id="statNotMine">Not Mine: -</span>
+    </div>
+
+    <div class="card" id="mainCard">
+        <div id="instructions-panel" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; font-weight: 500; font-size: 14px; display: none;">
+            <!-- Dynamic instructions injected here -->
+        </div>
+
+        <div class="card-header">
+            <span class="mode-badge" id="modeBadge">Loading</span>
+            <span class="remaining" id="remaining">-- remaining</span>
+        </div>
+
+        <div class="folder-path" id="folderPath">Loading...</div>
+        <div class="ai-score" id="aiScore"></div>
+
+        <div class="players" id="players">
+            <div class="player-box" id="playerBox1" style="display:none;">
+                <span class="player-label" id="label1">Longest Clip</span>
+                <audio id="player1" controls></audio>
+            </div>
+            <div class="player-box" id="playerBox2" style="display:none;">
+                <span class="player-label" id="label2">2nd Longest Clip</span>
+                <audio id="player2" controls></audio>
+            </div>
+        </div>
+
+        <p class="instructions">M = Mine &nbsp;|&nbsp; N = Not Mine &nbsp;|&nbsp; Space = Play/Pause &nbsp;|&nbsp; S = Skip</p>
+
+        <div class="controls" id="controls" style="visibility:hidden;">
+            <button class="btn-mine" onclick="annotate('mine')">
+                Mine <span class="shortcut">M</span>
+            </button>
+            <button class="btn-skip" onclick="annotate('skip')" title="Skip for now">
+                Skip <span class="shortcut">S</span>
+            </button>
+            <button class="btn-notmine" onclick="annotate('not_mine')">
+                Not Mine <span class="shortcut">N</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function updateInstructionsPanel(mineCount, maybeCount, notMineCount, currentMode) {
+            const panel = document.getElementById('instructions-panel');
+            panel.style.display = 'block';
+            
+            if (mineCount < 15 && maybeCount === 0) {
+                panel.style.backgroundColor = '#1e3a8a';
+                panel.style.color = '#bfdbfe';
+                panel.style.border = '1px solid #3b82f6';
+                panel.innerHTML = '<strong>PHASE 0 (SEEDING):</strong> Please manually tag at least 15 clear voice clips as "Mine" to build an initial reference profile.';
+            } else if (mineCount >= 15 && maybeCount === 0 && notMineCount > 0 && currentMode === 'not_mine') {
+                panel.style.backgroundColor = '#064e3b';
+                panel.style.color = '#a7f3d0';
+                panel.style.border = '1px solid #10b981';
+                panel.innerHTML = '<strong>PHASE 1 READY:</strong> Initial seed complete! You can close this window and run <b>Option 2: Auto Annotate</b> in your terminal to automatically find more matches.';
+            } else if (maybeCount > 0) {
+                panel.style.backgroundColor = '#78350f';
+                panel.style.color = '#fde68a';
+                panel.style.border = '1px solid #f59e0b';
+                panel.innerHTML = `<strong>PHASE 2 (MAYBES):</strong> The AI found ${maybeCount} possible matches. Review them now. (Green badge = Highly likely, Red = Unsure)`;
+            } else if (currentMode === 'not_mine') {
+                panel.style.backgroundColor = '#4c1d95';
+                panel.style.color = '#ddd6fe';
+                panel.style.border = '1px solid #8b5cf6';
+                panel.innerHTML = '<strong>PHASE 3 (RECHECK):</strong> You are currently double checking rejected items. If you just ran the <b>Gold Standard Check</b>, any new strays found will appear here.';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        let currentFolder = null;
+        let currentMode = null;
+        let isFirstLoad = true;
+        let skippedFolders = new Set();
+
+        async function loadNext(skipCurrent = false) {
+            if (skipCurrent && currentFolder) {
+                skippedFolders.add(currentFolder);
+            }
+
+            try {
+                const res = await fetch('/api/next?skip=' + [...skippedFolders].join(','));
+                const data = await res.json();
+
+                // Update stats
+                document.getElementById('statMine').textContent = `Mine: ${data.total_mine ?? '-'}`;
+                document.getElementById('statMaybe').textContent = `Maybe: ${data.total_maybe ?? '-'}`;
+                document.getElementById('statNotMine').textContent = `Not Mine: ${data.total_not_mine ?? '-'}`;
+
+                updateInstructionsPanel(data.total_mine, data.total_maybe, data.total_not_mine, data.mode);
+
+                if (data.done) {
+                    document.getElementById('mainCard').innerHTML =
+                        '<div class="done-msg">All done! Nothing left to review.</div>';
+                    return;
+                }
+
+                document.getElementById('remaining').textContent = `${data.remaining} remaining`;
+                document.getElementById('folderPath').textContent = data.path.replace('output/', '');
+                currentFolder = data.path;
+                currentMode = data.mode;
+
+                // Mode badge
+                const badge = document.getElementById('modeBadge');
+                if (data.mode === 'maybe') {
+                    badge.textContent = 'Maybe';
+                    badge.className = 'mode-badge mode-maybe';
+                } else {
+                    badge.textContent = 'Re-check Not Mine';
+                    badge.className = 'mode-badge mode-not_mine';
+                }
+
+                // AI Score
+                const aiEl = document.getElementById('aiScore');
+                if (data.similarity != null) {
+                    const pct = Math.round(data.similarity * 100);
+                    let cls = pct >= 75 ? 'score-high' : (pct >= 68 ? 'score-mid' : 'score-low');
+                    aiEl.innerHTML = `AI similarity: <span class="${cls}">${pct}%</span>`;
+                } else {
+                    aiEl.innerHTML = '';
+                }
+
+                // Players
+                const p1Box = document.getElementById('playerBox1');
+                const p2Box = document.getElementById('playerBox2');
+                const player1 = document.getElementById('player1');
+                const player2 = document.getElementById('player2');
+
+                player1.pause();
+                player2.pause();
+                p1Box.style.display = 'none';
+                p2Box.style.display = 'none';
+
+                if (data.top_clips && data.top_clips.length > 0) {
+                    p1Box.style.display = 'block';
+                    player1.src = '/' + data.top_clips[0];
+                    document.getElementById('label1').textContent =
+                        'Longest: ' + data.top_clips[0].split('/').pop();
+
+                    if (data.top_clips.length > 1) {
+                        p2Box.style.display = 'block';
+                        player2.src = '/' + data.top_clips[1];
+                        document.getElementById('label2').textContent =
+                            '2nd: ' + data.top_clips[1].split('/').pop();
+                    }
+                } else {
+                    document.getElementById('folderPath').textContent += ' (no clips found)';
+                }
+
+                document.getElementById('controls').style.visibility = 'visible';
+
+                if (!isFirstLoad && data.top_clips && data.top_clips.length > 0) {
+                    player1.play().catch(() => {});
+                }
+                isFirstLoad = false;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('remaining').textContent = 'Error — check server';
+            }
+        }
+
+        async function annotate(label) {
+            if (!currentFolder) return;
+            if (label === 'skip') {
+                loadNext(true);
+                return;
+            }
+            document.getElementById('controls').style.visibility = 'hidden';
+            await fetch('/api/annotate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: currentFolder, label })
+            });
+            loadNext();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('controls').style.visibility === 'hidden') return;
+            const key = e.key.toLowerCase();
+            if (key === 'm') annotate('mine');
+            else if (key === 'n') annotate('not_mine');
+            else if (key === 's') annotate('skip');
+            else if (key === ' ') {
+                e.preventDefault();
+                const p = document.getElementById('player1');
+                if (p && p.src) p.paused ? p.play() : p.pause();
+            }
+        });
+
+        loadNext();
+    </script>
+</body>
+</html>

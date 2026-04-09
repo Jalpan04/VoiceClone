@@ -1,0 +1,17 @@
+# Speaker Diarization Requirements
+# Install with: pip install -r requirements_diarize.txt
+
+# Core diarization engine (best open-source speaker diarization)
+pyannote.audio>=3.1.0
+
+# Audio loading and splitting
+pydub>=0.25.1
+
+# GPU acceleration (optional but recommended for large files)
+# torch is already a dependency of pyannote.audio
+
+# Progress bars
+tqdm>=4.66.0
+
+# Auto-load .env token file
+python-dotenv>=1.0.0

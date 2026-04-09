@@ -1,0 +1,35 @@
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.class
+venv/
+.env
+
+# XTTS Models & Training (LARGE FILES - RECURSIVE)
+**/base_models/
+**/finetune_models/
+**/output/
+**/*.pth
+**/*.pt
+**/*.json
+!**/base_models/v2.0.2/config.json
+!**/base_models/v2.0.2/vocab.json
+!**/finetune_models/ready/config.json
+!**/finetune_models/ready/vocab.json
+
+# Datasets & Media
+**/TTS_Dataset/
+**/wavs/
+**/*.wav
+**/*.mp3
+**/*.m4a
+**/*.m4b
+**/*.zip
+**/*.rar
+**/metadata.csv
+**/metadata_train.csv
+**/metadata_eval.csv
+
+# OS
+.DS_Store
+Thumbs.db
