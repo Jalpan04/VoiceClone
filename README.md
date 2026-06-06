@@ -1,5 +1,7 @@
 # VoiceClone: A Technical Guide to High-Fidelity Hindi Voice Cloning
 
+![GitHub top language](https://img.shields.io/github/languages/top/Jalpan04/VoiceClone) ![GitHub repo size](https://img.shields.io/github/repo-size/Jalpan04/VoiceClone) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 This article documents the comprehensive process of creating a high-quality Hindi voice clone using the XTTS-v2 architecture. It chronicles the journey from raw call recordings to a fully optimized, production-ready model, detailing every technical obstacle encountered and the specialized solutions developed to overcome them.
 
 ## Table of Contents
