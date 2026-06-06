@@ -81,3 +81,7 @@ To replicate this process for any other voice, follow these steps:
 
 ---
 *Documentation maintained by Jalpan04*
+
+## License
+
+This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
